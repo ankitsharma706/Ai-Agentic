@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # ── Python ML Microservice ──────────────────────────────────────────────────
+  ml-service:
+    build: ./ml-service
+    container_name: ml-service
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - APP_NAME=ChurnMLService
+      - LOG_FORMAT=json
+    volumes:
+      - ./ml-service/data:/app/data
+      - ./ml-service/reports:/app/reports
+    depends_on:
+      - mlflow
+
+  # ── Node.js API Gateway ─────────────────────────────────────────────────────
+  node-backend:
+    build: ./node-backend
+    container_name: node-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - ML_SERVICE_URL=http://ml-service:8000
+    depends_on:
+      - ml-service
+
+  # ── MLflow Tracking Server ──────────────────────────────────────────────────
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.12.1
+    container_name: mlflow
+    ports:
+      - "5000:5000"
+    command: >
+      mlflow server 
+      --host 0.0.0.0 
+      --port 5000 
+      --backend-store-uri sqlite:///mlflow.db 
+      --default-artifact-root /artifacts
+    volumes:
+      - ./ml-service/mlflow:/artifacts
