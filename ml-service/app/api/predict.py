@@ -25,19 +25,29 @@ router = APIRouter(prefix="/predict", tags=["Prediction"])
 
 
 class PredictResponse(BaseModel):
-    """Churn prediction output for a single user."""
+    """Churn prediction output with enterprise metadata."""
 
-    user_id: str
-    churn_score: float = Field(..., ge=0.0, le=1.0,
-                               description="Churn probability [0, 1]")
-    risk_level: str = Field(..., description="LOW | MEDIUM | HIGH")
+    customer_id: str
+    name: Optional[str] = None
+    segment: Optional[str] = None
+    subscription_plan: Optional[str] = None
+    current_status: Optional[str] = None
+    churn_probability: float = Field(..., ge=0.0, le=1.0)
+    risk_level: str = Field(..., description="LOW | MEDIUM | HIGH | CRITICAL")
+    predicted_revenue_loss: Optional[str] = None
+    last_active_date: Optional[str] = None
+    forecast_month: Optional[str] = None
+    recommended_action: Optional[str] = None
+    source: str = "ML-Engine-v2"
 
     model_config = {
         "json_schema_extra": {
             "example": {
-                "user_id": "usr_abc123",
-                "churn_score": 0.782,
+                "customer_id": "C-001",
+                "churn_probability": 0.78,
                 "risk_level": "HIGH",
+                "predicted_revenue_loss": "$1,200",
+                "recommended_action": "Incentivize renewal with 20% discount"
             }
         }
     }

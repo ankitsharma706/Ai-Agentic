@@ -1,5 +1,5 @@
 """
-ml-pipeline/fast_batch_predict.py  --  Optimized 1M Row Ingestion
+ml_pipeline/fast_batch_predict.py  --  Optimized 1M Row Ingestion
 ==============================================================
 Predicts and uploads the full 1,000,000 rows in chunks.
 Skips training to save time.

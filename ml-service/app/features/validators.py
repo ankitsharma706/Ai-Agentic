@@ -19,7 +19,20 @@ class RawUserActivity(BaseModel):
     Recency is expressed in days (non-negative integer).
     """
 
-    user_id: str = Field(..., description="Unique user identifier")
+    user_id: Optional[str] = Field(None, description="Unique user identifier")
+    customer_id: Optional[str] = Field(None, description="Enterprise customer identifier")
+
+    # Metadata / New Schema Fields
+    name: Optional[str] = Field(None, description="Customer full name")
+    segment: Optional[str] = Field(None, description="Market segment (Enterprise, SMB, etc.)")
+    subscription_plan: Optional[str] = Field(None, description="Current subscription plan")
+    current_status: Optional[str] = Field(None, description="Account status (Active, Churned, etc.)")
+    predicted_churn_probability: Optional[str] = Field(None, description="Historical churn probability")
+    risk_level: Optional[str] = Field(None, description="Historical risk level")
+    predicted_revenue_loss: Optional[str] = Field(None, description="Estimated revenue impact")
+    last_active_date: Optional[str] = Field(None, description="Last activity timestamp")
+    forecast_month: Optional[str] = Field(None, description="Strategic forecast window")
+    recommended_action: Optional[str] = Field(None, description="Suggested retention strategy")
 
     # Transaction counts per time window
     txn_7d: float = Field(0.0, ge=0, description="Transactions in last 7 days")
@@ -28,18 +41,10 @@ class RawUserActivity(BaseModel):
 
     # RFM components
     recency_days: int = Field(
-        ..., ge=0, le=3650, description="Days since last activity (0–3650)"
+        0, ge=0, le=3650, description="Days since last activity (0–3650)"
     )
     frequency: int = Field(0, ge=0, description="Total activity count")
     monetary: float = Field(0.0, ge=0, description="Total spend / lifetime value")
-
-    # Optional metadata
-    account_age_days: Optional[int] = Field(
-        None, ge=0, description="Days since account creation"
-    )
-    plan_tier: Optional[str] = Field(
-        None, description="Subscription plan tier (free/basic/pro)"
-    )
 
     @field_validator("txn_30d")
     @classmethod

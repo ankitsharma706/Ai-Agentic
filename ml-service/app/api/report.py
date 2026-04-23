@@ -34,7 +34,7 @@ def get_dashboard_json() -> JSONResponse:
     try:
         import sys
         from pathlib import Path
-        sys.path.insert(0, str(Path("ml-pipeline").resolve()))
+        sys.path.insert(0, str(Path("ml_pipeline").resolve()))
         from db.mongo import MongoManager
         
         db = MongoManager().db

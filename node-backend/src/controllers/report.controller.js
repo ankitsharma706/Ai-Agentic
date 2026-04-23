@@ -7,7 +7,30 @@ exports.getDashboard = async (req, res, next) => {
     const data = await mlService.getDashboard();
     res.json(data);
   } catch (error) {
-    next(error);
+    console.warn('ML Service unreachable, using MongoDB fallback for dashboard data');
+    try {
+        const Prediction = require('../models/prediction.model');
+        const stats = await Prediction.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    total_users: { $sum: 1 },
+                    high_risk_count: {
+                        $sum: { $cond: [{ $eq: ["$risk_level", "High"] }, 1, 0] }
+                    },
+                    avg_churn_score: { $avg: "$churn_score" }
+                }
+            }
+        ]);
+        const summary = stats[0] || { total_users: 0, high_risk_count: 0, avg_churn_score: 0 };
+        res.json({
+            summary,
+            status: 'Offline (Using Cache)',
+            timestamp: new Date()
+        });
+    } catch (fallbackError) {
+        next(error); // If fallback also fails, throw original error
+    }
   }
 };
 

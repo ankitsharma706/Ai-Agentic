@@ -33,7 +33,7 @@ def load_model(force_reload: bool = False) -> Any:
     # 1. Try Loading Upgraded v2.0 Model (Joblib)
     import joblib
     from pathlib import Path
-    v2_path = Path("ml-pipeline/outputs/xgb_model.pkl")
+    v2_path = Path("ml_pipeline/outputs/xgb_model.pkl")
     
     if v2_path.exists():
         try:
@@ -52,7 +52,7 @@ def load_model(force_reload: bool = False) -> Any:
         logger.info("Model loaded successfully from MLflow")
     except Exception as exc:
         logger.warning(f"MLflow load failed. Checking model.pkl fallback...")
-        local_path = "ml-pipeline/outputs/xgb_model.pkl" # Double check
+        local_path = "ml_pipeline/outputs/xgb_model.pkl" # Double check
         if Path(local_path).exists():
             _model_cache = joblib.load(local_path)
         else:

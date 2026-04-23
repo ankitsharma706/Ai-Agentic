@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const predictionSchema = new mongoose.Schema({
-    user_id: {
+    customer_id: {
         type: String,
         required: true,
         index: true

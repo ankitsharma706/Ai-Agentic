@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api import health, predict, train
-from app.api import report
+from app.api import report, forecast
 from app.core.config import settings
 from app.core.logger import get_logger
 from app.models.loader import load_model
@@ -91,6 +91,7 @@ def create_app() -> FastAPI:
     app.include_router(predict.router)
     app.include_router(train.router)
     app.include_router(report.router)
+    app.include_router(forecast.router)
 
     # ── Global exception handler ──────────────────────────────────────────
     @app.exception_handler(Exception)

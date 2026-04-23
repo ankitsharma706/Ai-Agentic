@@ -94,10 +94,43 @@ def save_analytics_summary(summary: dict):
     db.analytics_summary.insert_one(summary)
     print("[mongo] Saved analytics summary.")
 
+def save_forecasts(df: pd.DataFrame):
+    """Saves quarterly forecast predictions."""
+    if not ping(): return
+    db = MongoManager().db
+    df = df.copy()
+    df["timestamp"] = datetime.utcnow()
+    
+    records = df.to_dict(orient="records")
+    # Clean keys for MongoDB (spaces to underscores)
+    cleaned_records = []
+    for r in records:
+        cleaned_r = {k.lower().replace(" ", "_"): v for k, v in r.items()}
+        cleaned_records.append(cleaned_r)
+    
+    db.forecasts.insert_many(cleaned_records)
+    print(f"[mongo] Saved {len(cleaned_records):,} forecast predictions.")
+
+def load_forecasts(month: str = None) -> pd.DataFrame:
+    if not ping(): return pd.DataFrame()
+    db = MongoManager().db
+    query = {"forecast_month": month} if month else {}
+    cursor = db.forecasts.find(query).sort("timestamp", -1)
+    return pd.DataFrame(list(cursor))
+
 def load_top_churn_risk(n: int = 5) -> pd.DataFrame:
     if not ping(): return pd.DataFrame()
     db = MongoManager().db
     cursor = db.predictions.find().sort("churn_score", -1).limit(n)
+    return pd.DataFrame(list(cursor))
+
+def get_user_history(customer_id: str, days: int = 90) -> pd.DataFrame:
+    """Fetches transaction and activity history for a specific user."""
+    if not ping(): return pd.DataFrame()
+    db = MongoManager().db
+    # We look in 'transactions' or 'activity' collection
+    # For now, let's assume 'activity' collection exists and has 'timestamp' and 'customer_id'
+    cursor = db.activity.find({"customer_id": customer_id}).sort("timestamp", -1)
     return pd.DataFrame(list(cursor))
 
 def get_segment_distribution() -> dict:

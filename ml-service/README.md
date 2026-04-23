@@ -178,6 +178,12 @@ Triggers the batch pipeline in the background and generates PDF + JSON.
 ### `GET /report/pdf/latest`
 Downloads the most recently generated PDF report.
 
+### `GET /forecast`
+Retrieve quarterly forecast predictions from MongoDB. Optional filter: `?month=Q3 2025`.
+
+### `POST /forecast/refresh`
+Manually refresh the forecast database from the raw predictions CSV.
+
 ---
 
 ## 📊 Time-Series Feature Matrix (14 features)
