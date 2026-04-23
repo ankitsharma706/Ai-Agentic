@@ -12,6 +12,7 @@ htmlcov/
 .mypy_cache/
 .ipynb_checkpoints/
 frontend
+nginx
 # ── Node.js ──────────────────────────────────────────────────────────────────
 node_modules/
 npm-debug.log*

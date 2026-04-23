@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["*"]   # Restrict in production
 
     # ── MongoDB ───────────────────────────────────────────────────────────
-    MONGO_URI: str = "mongodb://localhost:27017/churnai"
+    MONGO_URI: str = "mongodb://localhost:27017/agentic"
 
     # ── MLflow ────────────────────────────────────────────────────────────
     MLFLOW_TRACKING_URI: str = "http://localhost:5000"

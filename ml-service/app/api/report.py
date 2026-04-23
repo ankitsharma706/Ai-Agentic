@@ -27,25 +27,29 @@ router = APIRouter(prefix="/report", tags=["Reports & Pipeline"])
 @router.get("/dashboard", summary="Latest dashboard JSON (frontend-ready)")
 def get_dashboard_json() -> JSONResponse:
     """
-    Return the most recent dashboard JSON produced by the batch pipeline.
-
-    Node.js compatible — pure JSON.
-
-    Raises:
-        404: If no dashboard JSON has been generated yet.
+    Return the most recent dashboard analytics from MongoDB.
+    
+    Node.js compatible — pull from Churn Intelligence v2.0 storage.
     """
-    output_dir = Path(settings.BATCH_OUTPUT_DIR)
-    json_files = sorted(output_dir.glob("dashboard_*.json"), reverse=True)
-
-    if not json_files:
-        raise HTTPException(
-            status_code=404,
-            detail="No dashboard JSON found. Run the batch pipeline first.",
-        )
-
-    latest = json_files[0]
-    data   = json.loads(latest.read_text())
-    return JSONResponse(content=data)
+    try:
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path("ml-pipeline").resolve()))
+        from db.mongo import MongoManager
+        
+        db = MongoManager().db
+        if db is None:
+            raise HTTPException(status_code=503, detail="Database connection failed")
+            
+        latest = db.analytics_summary.find_one(sort=[("timestamp", -1)])
+        if not latest:
+            raise HTTPException(status_code=404, detail="No analytics summary found in MongoDB.")
+            
+        latest.pop("_id", None)
+        return JSONResponse(content=latest)
+    except Exception as e:
+        logger.error(f"Failed to fetch dashboard from MongoDB: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal Error: {str(e)}")
 
 
 @router.post("/generate", summary="Trigger batch pipeline + PDF report")

@@ -21,64 +21,42 @@ logger = get_logger(__name__)
 _model_cache: Optional[mlflow.pyfunc.PyFuncModel] = None
 
 
-def load_model(force_reload: bool = False) -> mlflow.pyfunc.PyFuncModel:
+def load_model(force_reload: bool = False) -> Any:
     """
-    Load the churn model from the MLflow Model Registry.
-
-    The model is cached in-process after the first successful load.
-    Set ``force_reload=True`` to bypass the cache (e.g., after promotion).
-
-    Args:
-        force_reload: If True, discard the cached model and reload.
-
-    Returns:
-        A loaded :class:`mlflow.pyfunc.PyFuncModel` instance.
-
-    Raises:
-        RuntimeError: If the model cannot be loaded from MLflow.
+    Load the upgraded churn model (v2.0) or fallback to MLflow.
     """
     global _model_cache
 
     if _model_cache is not None and not force_reload:
-        logger.debug("Returning cached model")
         return _model_cache
 
+    # 1. Try Loading Upgraded v2.0 Model (Joblib)
+    import joblib
+    from pathlib import Path
+    v2_path = Path("ml-pipeline/outputs/xgb_model.pkl")
+    
+    if v2_path.exists():
+        try:
+            logger.info(f"Loading upgraded Churn v2.0 model from {v2_path}")
+            _model_cache = joblib.load(v2_path)
+            return _model_cache
+        except Exception as e:
+            logger.warning(f"Failed to load v2.0 pkl model: {e}")
+
+    # 2. Fallback to MLflow logic
     mlflow.set_tracking_uri(settings.MLFLOW_TRACKING_URI)
-
-    model_uri = (
-        settings.MODEL_URI
-        or f"models:/{settings.MLFLOW_MODEL_NAME}/{settings.MLFLOW_MODEL_STAGE}"
-    )
-
-    logger.info("Loading model from MLflow", extra={"model_uri": model_uri})
+    model_uri = settings.MODEL_URI or f"models:/{settings.MLFLOW_MODEL_NAME}/{settings.MLFLOW_MODEL_STAGE}"
 
     try:
-        # Fix for Windows paths in MLflow
-        if ":" in model_uri and not model_uri.startswith(("models:/", "runs:/", "file://", "http://", "https://")):
-            clean_path = model_uri.replace("\\", "/")
-            model_uri = f"file:///{clean_path}"
-            
         _model_cache = mlflow.pyfunc.load_model(model_uri)
-        logger.info("Model loaded successfully from MLflow", extra={"model_uri": model_uri})
+        logger.info("Model loaded successfully from MLflow")
     except Exception as exc:
-        logger.warning(
-            "Failed to load model from MLflow. Checking local fallback...",
-            extra={"model_uri": model_uri, "error": str(exc)},
-        )
-        
-        # Local fallback using native XGBoost
-        import os
-        import xgboost as xgb
-        local_path = "data/model.json"
-        
-        if os.path.exists(local_path):
-            logger.info("Loading model from local fallback", extra={"path": local_path})
-            _model_cache = xgb.XGBClassifier()
-            _model_cache.load_model(local_path)
+        logger.warning(f"MLflow load failed. Checking model.pkl fallback...")
+        local_path = "ml-pipeline/outputs/xgb_model.pkl" # Double check
+        if Path(local_path).exists():
+            _model_cache = joblib.load(local_path)
         else:
-            raise RuntimeError(
-                f"Could not load model from '{model_uri}' and no local fallback found at '{local_path}'."
-            ) from exc
+            raise RuntimeError(f"No model found at {v2_path}") from exc
 
     return _model_cache
 
